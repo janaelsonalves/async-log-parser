@@ -7,10 +7,11 @@ import re
 import pandas as pd
 import nest_asyncio
 
+nest_asyncio.apply()
+
 patterns = {
             'target_lines': re.compile(r'Radius Accounting'),
-            # 'ip_filter': re.compile(r'\b10\.65\.(?:\d{1,3})\.(?:\d{1,3})\b'),
-            "ip_filter": re.compile(r'10\.65\.\d+\.\d+'),
+            'ip_filter': re.compile(r'\b10\.65\.(?:\d{1,3})\.(?:\d{1,3})\b'),
             'datetime': re.compile(r'(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2})'),
             # 'key_value': re.compile(r'([A-Za-z]+\.[A-Za-z-]+)=([^,\s\[\]]+)')
             'key_value': re.compile(r'(\w[\w.-]*)=([^,]+)')
@@ -19,28 +20,33 @@ patterns = {
 # Número de linhas a serem processadas
 CHUNK_SIZE = 10000
 
-# -------------------------- PARSING LOGIC ---------------------------
 async def process_lines(lines, filename):
     parsed = []
-    for line in lines:
+
+    for i, line in enumerate(lines):
+        # Aplica filtros: precisa conter 'Radius Accounting' E IP iniciando com 10.65.*
         if patterns['target_lines'].search(line) and patterns['ip_filter'].search(line):
-        # if patterns['target_lines'].search(line):        
-        # if re.search(r'10.65', line):
             log_entry = {}
-            # Extrai data e hora
+
+            # Extrai data/hora
             dt_match = patterns['datetime'].search(line)
+            if not dt_match:
+                continue  # Ignora linhas sem data
             log_entry['RADIUS.Timestamp'] = dt_match.group(1)
 
-            # Extrai todos os pares chave=valor
-            # matches = LOG_PATTERN.findall(line)
-            matches = patterns['key_value'].findall(line)  # Aplica regex na linha
+            # Extrai pares chave=valor
+            matches = patterns['key_value'].findall(line)
             if matches:
-                log_entry["RADIUS.Filename"] = os.path.basename(filename)  # Nome do arquivo
+                log_entry["RADIUS.Filename"] = os.path.basename(filename)
                 for key, value in matches:
-                    log_entry[key.strip()] = value.strip()  # Remove espaços em branco
-                    if len(log_entry) > 1:  # Evita armazenar entradas vazias
-                        parsed.append(log_entry)  # Adiciona à lista
+                    log_entry[key.strip()] = value.strip()
+
+                parsed.append(log_entry)  # Apenas 1 append por linha válida
+
+        # Libera o event loop a cada 1000 linhas
+        if i % 1000 == 0:
             await asyncio.sleep(0)
+
     return parsed
 
 async def process_file_async(path, filename, chunk_size=CHUNK_SIZE):
@@ -156,6 +162,4 @@ if uploaded_files:
             file_name="parsed_logs.csv",
             mime="text/csv"
         )
-
-nest_asyncio.apply()
     
