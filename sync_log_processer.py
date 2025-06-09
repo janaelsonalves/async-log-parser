@@ -64,7 +64,7 @@ def process_all_logs(log_dir):
 
 # Exemplo de uso
 if __name__ == "__main__":
-    logdir = "C:/Users/Janaelson/Downloads/LogsClearPass"
+    logdir = "C:/TC 17_24 - Logs Clearpass - abr_25"
     # df = process_all_logs("logs")
     df = process_all_logs(logdir)
     df = df.drop_duplicates(subset=['RADIUS.Acct-Username'], keep='first')

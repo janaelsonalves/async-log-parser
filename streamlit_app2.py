@@ -18,14 +18,15 @@ patterns = {
         }
 
 # Número de linhas a serem processadas
-CHUNK_SIZE = 10000
+CHUNK_SIZE = 50000
 
 async def process_lines(lines, filename):
     parsed = []
 
     for i, line in enumerate(lines):
         # Aplica filtros: precisa conter 'Radius Accounting' E IP iniciando com 10.65.*
-        if patterns['target_lines'].search(line) and patterns['ip_filter'].search(line):
+        if patterns['target_lines'].search(line):
+            # and patterns['ip_filter'].search(line):
             log_entry = {}
 
             # Extrai data/hora

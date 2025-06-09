@@ -6,6 +6,7 @@ import os
 import re
 import pandas as pd
 import nest_asyncio
+from io import StringIO  
 
 patterns = {
             'target_lines': re.compile(r'Radius Accounting'),
@@ -48,6 +49,7 @@ async def process_file_async(path, filename, chunk_size=CHUNK_SIZE):
     buffer = []
 
     async with aiofiles.open(path, mode='r') as f:
+        print(f"Processando arquivo: {filename}")
         async for line in f:
             buffer.append(line)
             if len(buffer) >= chunk_size:
